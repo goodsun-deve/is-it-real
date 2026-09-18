@@ -1,0 +1,10 @@
+{
+  "name": "is-it-real",
+  "version": "1.0.0",
+  "private": true,
+  "description": "받은 글이 가짜뉴스인지 AI가 판단해 주는 웹서비스",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  }
+}
