@@ -10,6 +10,16 @@
 <meta property="og:description" content="받은 글을 넣으면 AI가 가짜뉴스 가능성을 분석해 드립니다.">
 <meta property="og:type" content="website">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔎</text></svg>">
+
+<!-- PWA: 홈 화면 추가 + 안드로이드 공유 대상으로 등록되기 위한 설정 -->
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#2f5bd8">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="진짜일까?">
+<meta name="mobile-web-app-capable" content="yes">
+
 <style>
   :root{
     --bg:#f6f7f9;
@@ -42,7 +52,7 @@
       --shadow:0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
     }
   }
-  *{box-sizing:border-box}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   html,body{margin:0;padding:0}
   body{
     background:var(--bg); color:var(--ink);
@@ -77,7 +87,7 @@
   .count{font-size:12.5px;color:var(--ink-3);font-variant-numeric:tabular-nums}
   .count.over{color:var(--high)}
   button.go{
-    appearance:none;border:0;cursor:pointer;
+    appearance:none;border:0;cursor:pointer;touch-action:manipulation;
     background:var(--accent); color:var(--accent-ink);
     font:inherit; font-weight:600; font-size:15px;
     padding:11px 22px; border-radius:10px;
@@ -141,7 +151,7 @@
   .disclaimer b{color:var(--ink-2)}
 
   .again{
-    display:block;width:100%;margin-top:16px;padding:12px;
+    display:block;width:100%;margin-top:16px;padding:12px;touch-action:manipulation;
     background:transparent;border:1px solid var(--line);border-radius:10px;
     color:var(--ink-2);font:inherit;font-size:14.5px;cursor:pointer;
   }
@@ -174,7 +184,8 @@
 
   <p class="hint">
     <b>넣을 수 있는 것</b> · 카톡·SNS로 받은 글, 뉴스 기사 본문, 뉴스 기사 주소<br>
-    <b>아직 안 되는 것</b> · 유튜브 영상 (영상 설명이나 자막을 복사해서 넣어주세요), 이미지·캡처
+    <b>아직 안 되는 것</b> · 유튜브 영상 (영상 설명이나 자막을 복사해서 넣어주세요), 이미지·캡처<br>
+    <b>더 편하게 쓰려면</b> · 홈 화면에 추가해서 앱처럼 열어보세요. 안드로이드에서는 다른 앱의 '공유' 메뉴로 바로 검사할 수 있어요 (아이폰은 아직 지원되지 않아요).
   </p>
 
   <div id="result"></div>
@@ -317,7 +328,39 @@
       updateCount();
     });
   });
+
+  // 다른 앱(카톡 등)에서 "공유"로 열렸을 때: 공유된 내용을 입력창에 채워넣고 바로 검사
+  // (제출 이벤트 리스너를 등록한 뒤에 실행되어야 하므로 반드시 여기, 맨 아래에 둔다)
+  (function handleSharedContent(){
+    var params = new URLSearchParams(location.search);
+    if (!params.has('share')) return;
+
+    var sharedText  = (params.get('text') || '').trim();
+    var sharedUrl   = (params.get('url') || '').trim();
+    var sharedTitle = (params.get('title') || '').trim();
+
+    var combined = sharedText;
+    if (sharedUrl && combined.indexOf(sharedUrl) === -1){
+      combined = combined ? (combined + '\n' + sharedUrl) : sharedUrl;
+    }
+    if (!combined && sharedTitle) combined = sharedTitle;
+
+    // 주소표시줄을 깔끔하게 되돌려서, 새로고침해도 같은 내용이 또 제출되지 않게 함
+    history.replaceState(null, '', location.pathname);
+
+    if (combined){
+      input.value = combined;
+      updateCount();
+      form.requestSubmit();
+    }
+  })();
 })();
+
+if ('serviceWorker' in navigator){
+  window.addEventListener('load', function(){
+    navigator.serviceWorker.register('/sw.js').catch(function(){ /* 설치 기능 없이도 사이트는 정상 동작 */ });
+  });
+}
 </script>
 </body>
 </html>
