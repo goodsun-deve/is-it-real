@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>진짜일까? — 구매자 전용</title>
+<meta name="description" content="구매 시 받은 코드로 이용하는 가짜뉴스 판별 서비스입니다.">
+<meta name="color-scheme" content="light dark">
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔎</text></svg>">
+<meta name="theme-color" content="#2f5bd8">
+<style>
+  :root{
+    --bg:#f6f7f9; --surface:#ffffff; --ink:#16181d; --ink-2:#4a5058; --ink-3:#818892;
+    --line:#e3e6ea; --accent:#2f5bd8; --accent-ink:#ffffff;
+    --high:#b45309; --high-bg:#fff7ed; --high-line:#fed7aa;
+    --low:#0f766e; --low-bg:#f0fdfa; --low-line:#99f6e4;
+    --hold:#52525b; --hold-bg:#f4f4f5; --hold-line:#e4e4e7;
+    --radius:14px; --shadow:0 1px 2px rgba(16,20,28,.05), 0 8px 24px rgba(16,20,28,.06);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1115; --surface:#171a20; --ink:#f0f2f5; --ink-2:#b4bac3; --ink-3:#7c838d;
+      --line:#272b33; --accent:#6d8ff0; --accent-ink:#0f1115;
+      --high:#fbbf24; --high-bg:#2a2113; --high-line:#4a3a1b;
+      --low:#5eead4; --low-bg:#0f2725; --low-line:#1d4a45;
+      --hold:#a1a1aa; --hold-bg:#1f2126; --hold-line:#33363d;
+      --shadow:0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
+    }
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR","Malgun Gothic",system-ui,sans-serif;
+    font-size:16px; line-height:1.65;
+    -webkit-font-smoothing:antialiased;
+    padding:0 16px env(safe-area-inset-bottom);
+  }
+  .wrap{max-width:640px;margin:0 auto;padding:40px 0 64px}
+
+  header h1{font-size:26px; font-weight:700; letter-spacing:-.02em; margin:0 0 6px;}
+  header p{margin:0 0 24px;color:var(--ink-2);font-size:15px}
+
+  .badge{
+    display:inline-block;font-size:12.5px;font-weight:600;color:var(--accent);
+    background:rgba(47,91,216,.1);border-radius:99px;padding:4px 12px;margin-bottom:14px;
+  }
+
+  .card{
+    background:var(--surface); border:1px solid var(--line);
+    border-radius:var(--radius); box-shadow:var(--shadow);
+  }
+  .composer{padding:14px}
+
+  label{display:block;font-size:13px;font-weight:600;color:var(--ink-2);margin:0 0 6px 2px}
+  input.code{
+    width:100%;border:1px solid var(--line);border-radius:10px;background:transparent;
+    color:var(--ink);font:inherit;font-size:16px;padding:12px;outline:0;
+    letter-spacing:.04em;
+  }
+  input.code:focus{border-color:var(--accent)}
+  .code-row{padding:14px 14px 0}
+  .divider{border-top:1px solid var(--line);margin:14px 4px 0}
+
+  textarea{
+    width:100%; min-height:150px; resize:vertical; border:0; outline:0;
+    background:transparent; color:var(--ink); font:inherit; line-height:1.7;
+    padding:4px 4px 8px;
+  }
+  textarea::placeholder{color:var(--ink-3)}
+  .composer-foot{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+    border-top:1px solid var(--line); padding:10px 4px 0; margin-top:4px;
+  }
+  .count{font-size:12.5px;color:var(--ink-3);font-variant-numeric:tabular-nums}
+  .count.over{color:var(--high)}
+  button.go{
+    appearance:none;border:0;cursor:pointer;touch-action:manipulation;
+    background:var(--accent); color:var(--accent-ink);
+    font:inherit; font-weight:600; font-size:15px;
+    padding:11px 22px; border-radius:10px;
+    transition:opacity .15s, transform .08s;
+  }
+  button.go:hover{opacity:.9}
+  button.go:active{transform:translateY(1px)}
+  button.go:disabled{opacity:.45;cursor:not-allowed}
+
+  .hint{margin:12px 2px 0;font-size:13.5px;color:var(--ink-3);line-height:1.6}
+  .hint b{color:var(--ink-2);font-weight:600}
+
+  .loading{display:flex;align-items:center;gap:10px;padding:22px 18px;color:var(--ink-2);font-size:15px}
+  .spinner{
+    width:17px;height:17px;border-radius:50%;flex:none;
+    border:2px solid var(--line); border-top-color:var(--accent);
+    animation:spin .8s linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  #result{margin-top:22px}
+  #result:empty{display:none}
+  .verdict{padding:20px 18px 18px;border-radius:var(--radius);border:1px solid;margin-bottom:14px}
+  .verdict.high{background:var(--high-bg);border-color:var(--high-line)}
+  .verdict.low{background:var(--low-bg);border-color:var(--low-line)}
+  .verdict.hold{background:var(--hold-bg);border-color:var(--hold-line)}
+  .vlabel{font-size:12.5px;font-weight:600;letter-spacing:.02em;margin:0 0 4px;opacity:.85}
+  .vmain{font-size:23px;font-weight:700;letter-spacing:-.02em;margin:0 0 10px;line-height:1.35}
+  .verdict.high .vlabel,.verdict.high .vmain{color:var(--high)}
+  .verdict.low .vlabel,.verdict.low .vmain{color:var(--low)}
+  .verdict.hold .vlabel,.verdict.hold .vmain{color:var(--hold)}
+  .vhead{font-size:15.5px;color:var(--ink);margin:0 0 14px;line-height:1.6}
+  .meter{height:7px;border-radius:99px;background:rgba(128,128,128,.18);overflow:hidden}
+  .meter i{display:block;height:100%;border-radius:99px;transition:width .5s ease}
+  .verdict.high .meter i{background:var(--high)}
+  .verdict.low .meter i{background:var(--low)}
+  .verdict.hold .meter i{background:var(--hold)}
+  .mrow{display:flex;justify-content:space-between;font-size:12.5px;color:var(--ink-2);margin-top:7px}
+
+  .block{padding:18px;margin-bottom:14px}
+  .block h2{font-size:14px;font-weight:700;margin:0 0 12px;color:var(--ink-2);letter-spacing:-.01em}
+  .reason{padding:12px 0;border-top:1px solid var(--line)}
+  .reason:first-of-type{border-top:0;padding-top:0}
+  .reason b{display:block;font-size:15px;font-weight:650;margin-bottom:3px}
+  .reason span{font-size:14.5px;color:var(--ink-2)}
+  ul.checks{margin:0;padding-left:18px}
+  ul.checks li{font-size:14.5px;color:var(--ink-2);margin-bottom:7px}
+  ul.checks li:last-child{margin-bottom:0}
+
+  .notice{
+    font-size:13.5px;color:var(--ink-2);background:var(--surface);
+    border:1px solid var(--line);border-left:3px solid var(--ink-3);
+    border-radius:8px;padding:12px 14px;margin-bottom:14px;line-height:1.6;
+  }
+  .disclaimer{
+    font-size:13px;color:var(--ink-3);line-height:1.65;
+    padding:14px 16px;border:1px dashed var(--line);border-radius:10px;
+  }
+  .disclaimer b{color:var(--ink-2)}
+
+  .again{
+    display:block;width:100%;margin-top:16px;padding:12px;touch-action:manipulation;
+    background:transparent;border:1px solid var(--line);border-radius:10px;
+    color:var(--ink-2);font:inherit;font-size:14.5px;cursor:pointer;
+  }
+  .again:hover{background:var(--surface)}
+
+  .error{
+    padding:16px 18px;border-radius:var(--radius);
+    background:var(--high-bg);border:1px solid var(--high-line);color:var(--high);
+    font-size:14.5px;line-height:1.6;
+  }
+  .src{font-size:12.5px;color:var(--ink-3);margin:0 2px 10px;word-break:break-all}
+  footer{margin-top:36px;font-size:12.5px;color:var(--ink-3);text-align:center;line-height:1.7}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <span class="badge">구매자 전용</span>
+    <h1>🔎 진짜일까?</h1>
+    <p>구매 시 받은 코드를 입력하고, 카톡·SNS에서 받은 글을 붙여넣으면 허위정보일 가능성과 그 이유를 알려드립니다.</p>
+  </header>
+
+  <form id="form" class="card">
+    <div class="code-row">
+      <label for="code">구매자 코드</label>
+      <input class="code" id="code" type="text" placeholder="예: APPLE2026" autocomplete="off" autocapitalize="characters">
+    </div>
+    <div class="divider"></div>
+    <div class="composer">
+      <textarea id="input" placeholder="받은 글을 여기에 붙여넣으세요.&#10;뉴스 기사 주소(https://…)를 넣어도 됩니다." maxlength="12000"></textarea>
+      <div class="composer-foot">
+        <span class="count" id="count">0자</span>
+        <button class="go" id="go" type="submit">검사하기</button>
+      </div>
+    </div>
+  </form>
+
+  <p class="hint">
+    <b>넣을 수 있는 것</b> · 카톡·SNS로 받은 글, 뉴스 기사 본문, 뉴스 기사 주소<br>
+    <b>아직 안 되는 것</b> · 유튜브 영상 (영상 설명이나 자막을 복사해서 넣어주세요), 이미지·캡처
+  </p>
+
+  <div id="result"></div>
+
+  <footer>AI가 분석한 참고 결과입니다 · 최종 판단은 직접 하세요</footer>
+</div>
+
+<script>
+(function(){
+  var form   = document.getElementById('form');
+  var codeEl = document.getElementById('code');
+  var input  = document.getElementById('input');
+  var go     = document.getElementById('go');
+  var count  = document.getElementById('count');
+  var result = document.getElementById('result');
+  var MAX = 12000;
+
+  // 같은 브라우저에서 코드를 다시 안 치도록 세션 동안만 기억 (보안 목적 아님, 편의 목적)
+  try {
+    var saved = sessionStorage.getItem('iir_buyer_code');
+    if (saved) codeEl.value = saved;
+  } catch (e) {}
+
+  function esc(s){
+    return String(s == null ? '' : s)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+
+  function updateCount(){
+    var n = input.value.length;
+    count.textContent = n.toLocaleString('ko-KR') + '자';
+    count.classList.toggle('over', n >= MAX);
+    go.disabled = n < 1;
+  }
+  input.addEventListener('input', updateCount);
+  updateCount();
+
+  input.addEventListener('keydown', function(e){
+    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') form.requestSubmit();
+  });
+
+  function showLoading(){
+    result.innerHTML = '<div class="card loading"><span class="spinner"></span>' +
+      '<span>내용을 읽고 분석하는 중입니다… 최대 30초쯤 걸릴 수 있어요.</span></div>';
+    result.scrollIntoView({behavior:'smooth', block:'nearest'});
+  }
+
+  function showError(msg){
+    result.innerHTML = '<div class="error">' + esc(msg) + '</div>' +
+      '<button class="again" type="button" id="again">다른 글로 다시 검사하기</button>';
+    bindAgain();
+  }
+
+  function bindAgain(){
+    var a = document.getElementById('again');
+    if (a) a.addEventListener('click', function(){
+      result.innerHTML = '';
+      input.value = '';
+      updateCount();
+      input.focus();
+      window.scrollTo({top:0, behavior:'smooth'});
+    });
+  }
+
+  function render(d){
+    var cls = d.verdict === '높음' ? 'high' : (d.verdict === '낮음' ? 'low' : 'hold');
+    var label, main;
+    if (d.verdict === '높음'){ label = '가짜뉴스 가능성'; main = '높음'; }
+    else if (d.verdict === '낮음'){ label = '가짜뉴스 가능성'; main = '낮음'; }
+    else { label = '판정'; main = '판단 보류'; }
+
+    var html = '';
+    if (d.source && d.source !== '붙여넣은 글'){
+      html += '<p class="src">분석 대상 · ' + esc(d.source) + '</p>';
+    }
+    html += '<div class="verdict ' + cls + '">' +
+              '<p class="vlabel">' + label + '</p>' +
+              '<p class="vmain">' + main + '</p>' +
+              (d.headline ? '<p class="vhead">' + esc(d.headline) + '</p>' : '') +
+              '<div class="meter"><i style="width:' + (d.confidence||0) + '%"></i></div>' +
+              '<div class="mrow"><span>확신도</span><span><b>' + (d.confidence||0) + '%</b></span></div>' +
+            '</div>';
+
+    if (d.reasons && d.reasons.length){
+      html += '<div class="card block"><h2>이렇게 판단한 이유</h2>';
+      d.reasons.forEach(function(r){
+        html += '<div class="reason"><b>' + esc(r.label) + '</b><span>' + esc(r.detail) + '</span></div>';
+      });
+      html += '</div>';
+    }
+
+    if (d.checkpoints && d.checkpoints.length){
+      html += '<div class="card block"><h2>직접 확인해 보면 좋은 것</h2><ul class="checks">';
+      d.checkpoints.forEach(function(c){ html += '<li>' + esc(c) + '</li>'; });
+      html += '</ul></div>';
+    }
+
+    if (d.notice) html += '<div class="notice">⚠️ ' + esc(d.notice) + '</div>';
+    if (d.truncated) html += '<div class="notice">글이 길어서 앞부분만 분석했습니다.</div>';
+
+    html += '<div class="disclaimer">' +
+            '<b>이 결과는 AI의 참고 의견입니다.</b> 사실 확인을 대신하지 않으며, 틀릴 수 있습니다. ' +
+            '특히 최근에 일어난 일이나 널리 알려지지 않은 사안은 AI가 정확히 알지 못할 수 있습니다. ' +
+            '중요한 판단이라면 원문 출처와 다른 언론 보도를 꼭 직접 확인하세요.' +
+            '</div>';
+
+    html += '<button class="again" type="button" id="again">다른 글로 다시 검사하기</button>';
+
+    result.innerHTML = html;
+    bindAgain();
+    result.scrollIntoView({behavior:'smooth', block:'start'});
+  }
+
+  form.addEventListener('submit', function(e){
+    e.preventDefault();
+    var v = input.value.trim();
+    var code = codeEl.value.trim();
+    if (!v) return;
+
+    if (!code){
+      showError('구매 시 받은 코드를 입력해 주세요.');
+      codeEl.focus();
+      return;
+    }
+
+    try { sessionStorage.setItem('iir_buyer_code', code); } catch (e) {}
+
+    go.disabled = true;
+    showLoading();
+
+    fetch('/api/analyze-buyer', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ input: v, code: code })
+    })
+    .then(function(res){
+      return res.json().then(function(data){ return { ok: res.ok, data: data }; });
+    })
+    .then(function(r){
+      if (!r.ok) { showError(r.data && r.data.error ? r.data.error : '분석에 실패했습니다. 잠시 후 다시 시도해 주세요.'); return; }
+      render(r.data);
+    })
+    .catch(function(){
+      showError('서버에 연결하지 못했습니다. 인터넷 연결을 확인하고 다시 시도해 주세요.');
+    })
+    .finally(function(){
+      go.disabled = false;
+      updateCount();
+    });
+  });
+})();
+</script>
+</body>
+</html>

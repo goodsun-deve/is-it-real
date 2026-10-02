@@ -3,6 +3,9 @@
   "functions": {
     "api/analyze.js": {
       "maxDuration": 60
+    },
+    "api/analyze-buyer.js": {
+      "maxDuration": 60
     }
   },
   "headers": [
