@@ -6,6 +6,9 @@
     },
     "api/analyze-buyer.js": {
       "maxDuration": 60
+    },
+    "api/analyze-v2.js": {
+      "maxDuration": 60
     }
   },
   "headers": [
